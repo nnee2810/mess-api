@@ -1,7 +1,7 @@
 import { ExecutionContext, Injectable } from "@nestjs/common"
 import { Reflector } from "@nestjs/core"
 import { AuthGuard } from "@nestjs/passport"
-import { Key } from "src/constants/key"
+import { Key } from "src/configs/constants"
 
 @Injectable()
 export class JwtGuard extends AuthGuard("jwt") {
@@ -9,13 +9,13 @@ export class JwtGuard extends AuthGuard("jwt") {
     super()
   }
 
-  canActivate(ctx: ExecutionContext) {
+  canActivate(context: ExecutionContext) {
     const publicRoute = this.reflector.get<boolean>(
       Key.PUBLIC_ROUTE,
-      ctx.getHandler(),
+      context.getHandler(),
     )
     if (publicRoute) return true
 
-    return super.canActivate(ctx)
+    return super.canActivate(context)
   }
 }

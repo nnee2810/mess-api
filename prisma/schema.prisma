@@ -11,13 +11,66 @@ datasource db {
 }
 
 model User {
-  id         String   @id @default(uuid())
-  username   String   @unique
-  password   String
-  name       String
-  lastSignIn DateTime @default(now())
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id          String            @id @default(uuid())
+  username    String            @unique
+  password    String
+  blockedByMe Blocked[]         @relation("blockedByMe")
+  blockedToMe Blocked[]         @relation("blockedToMe")
+  devices     Device[]
+  messages    Message[]
+  channels    UsersOnChannels[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
 
   @@map("users")
+}
+
+model Blocked {
+  source    User     @relation(fields: [sourceId], references: [id], name: "blockedByMe")
+  sourceId  String
+  target    User     @relation(fields: [targetId], references: [id], name: "blockedToMe")
+  targetId  String
+  createdAt DateTime @default(now())
+
+  @@id([sourceId, targetId])
+}
+
+model Device {
+  socketId  String   @id
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  createdAt DateTime @default(now())
+
+  @@map("devices")
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  message   String
+  channel   Channel  @relation(fields: [channelId], references: [id])
+  channelId String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  createdAt DateTime @default(now())
+
+  @@map("messages")
+}
+
+model Channel {
+  id        String            @id @default(uuid())
+  users     UsersOnChannels[]
+  messages  Message[]
+  createdAt DateTime          @default(now())
+
+  @@map("channels")
+}
+
+model UsersOnChannels {
+  user      User    @relation(fields: [userId], references: [id])
+  userId    String
+  channel   Channel @relation(fields: [channelId], references: [id])
+  channelId String
+
+  @@id([userId, channelId])
+  @@map("users_on_channels")
 }

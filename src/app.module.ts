@@ -1,16 +1,23 @@
 import { Module } from "@nestjs/common"
 import { APP_GUARD } from "@nestjs/core"
-import { AppController } from "./app.controller"
-import { AppService } from "./app.service"
+import { AppGateway } from "./app.gateway"
 import { AuthModule } from "./modules/auth/auth.module"
 import { JwtGuard } from "./modules/auth/guards/jwt.guard"
+import { ChannelsModule } from "./modules/channels/channels.module"
+import { DevicesModule } from "./modules/devices/devices.module"
+import { MessagesModule } from "./modules/messages/messages.module"
 import { UsersModule } from "./modules/users/users.module"
 
 @Module({
-  imports: [UsersModule, AuthModule],
-  controllers: [AppController],
+  imports: [
+    AuthModule,
+    UsersModule,
+    DevicesModule,
+    MessagesModule,
+    ChannelsModule,
+  ],
   providers: [
-    AppService,
+    AppGateway,
     {
       provide: APP_GUARD,
       useClass: JwtGuard,

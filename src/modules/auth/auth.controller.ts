@@ -1,17 +1,12 @@
-import {
-  Body,
-  Controller,
-  Post,
-  Res,
-  UnauthorizedException,
-} from "@nestjs/common"
+import { Body, Controller, Post, UnauthorizedException } from "@nestjs/common"
 import { JwtService } from "@nestjs/jwt"
-import { Response } from "express"
-import { Key } from "src/constants/key"
+import { User } from "@prisma/client"
 import { handleErrorException } from "src/helpers/handleErrorException"
+import { exclude } from "src/utils/exclude"
 import { CreateUserDto } from "../users/dto/create-user.dto"
 import { UsersService } from "../users/users.service"
 import { AuthService } from "./auth.service"
+import { CurrentUser } from "./decorators/current-user.decorator"
 import { PublicRoute } from "./decorators/public-route.decorator"
 import { SignInDto } from "./dto/sign-in.dto"
 
@@ -23,22 +18,17 @@ export class AuthController {
     private jwtService: JwtService,
   ) {}
 
+  @PublicRoute()
   @Post("sign-in")
-  async signIn(
-    @Body() signInDto: SignInDto,
-    @Res({ passthrough: true }) res: Response,
-  ) {
+  async signIn(@Body() signInDto: SignInDto) {
     try {
       const user = await this.authService.validateUser(signInDto)
       if (!user) throw new UnauthorizedException()
       const token = this.jwtService.sign({
         id: user.id,
       })
-      res.cookie(Key.TOKEN, token, {
-        httpOnly: true,
-        maxAge: 24 * 60 * 60 * 1000,
-      })
-      return "Success"
+
+      return { token, user: exclude(user, ["password"]) }
     } catch (error) {
       handleErrorException(error)
     }
@@ -48,9 +38,16 @@ export class AuthController {
   @Post("sign-up")
   async signUp(@Body() createUserDto: CreateUserDto) {
     try {
-      return await this.usersService.create(createUserDto)
+      const user = await this.usersService.create(createUserDto)
+
+      return exclude(user, ["password"])
     } catch (error) {
       handleErrorException(error)
     }
+  }
+
+  @Post("check")
+  check(@CurrentUser() currentUser: User) {
+    return exclude(currentUser, ["password"])
   }
 }
